@@ -22,6 +22,8 @@ require_once libfile('function/member');
 $action = dhtmlspecialchars($_GET['action']);
 $setting = C::t('#springoauth2#spring_oauth_config')->first();
 
+$redirect_uri = $_G['siteurl'] . "grant-01-oidc.php";
+
 if ($action == 'callback') {
     $setting = C::t('#springoauth2#spring_oauth_config')->first();
     $curl = curl_init();
@@ -35,7 +37,7 @@ if ($action == 'callback') {
     CURLOPT_FOLLOWLOCATION => true,
     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
     CURLOPT_CUSTOMREQUEST => 'POST',
-    CURLOPT_POSTFIELDS => 'code='.$_GET['code'].'&grant_type=authorization_code&client_id='.$setting['clientid'].'&client_secret='.$setting['clientsecret'].'&redirect_uri=http%3A%2F%2F127.0.0.1%2Fgrant-01-oidc.php',
+    CURLOPT_POSTFIELDS => 'code='.$_GET['code'].'&grant_type=authorization_code&client_id='.$setting['clientid'].'&client_secret='.$setting['clientsecret'].'&redirect_uri=' . urlencode($redirect_uri),
     CURLOPT_HTTPHEADER => array(
         'Content-Type: application/x-www-form-urlencoded',
     ),
@@ -128,7 +130,6 @@ if ($action == 'callback') {
             showmessage($message, $url_forward, $param, $extra);
     }
 } elseif ($action == 'authorize') {
-    $redirect_uri = "http://127.0.0.1/grant-01-oidc.php";
     $url = $setting['issueruri'] . "/oauth2/authorize?response_type=code&client_id=" . $setting['clientid'] . "&scope=openid&redirect_uri=" . urlencode($redirect_uri);
     header('Location: ' . $url, true, 301);
 }
