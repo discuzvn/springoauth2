@@ -27,7 +27,6 @@ $redirect_uri = $_G['siteurl'] . "grant-01-oidc.php";
 if ($action == 'callback') {
     $setting = C::t('#springoauth2#spring_oauth_config')->first();
     $curl = curl_init();
-
     curl_setopt_array($curl, array(
     CURLOPT_URL => $setting['issueruri'] . '/oauth2/token',
     CURLOPT_RETURNTRANSFER => true,
@@ -126,7 +125,7 @@ if ($action == 'callback') {
 				'striptags' => false,
 			);
 
-            $param = array('bbname' => $this->setting['bbname'], 'username' => $_G['username'], 'usergroup' => $_G['group']['grouptitle'], 'uid' => $_G['uid']);
+            $param = array('bbname' => $setting['bbname'], 'username' => $_G['username'], 'usergroup' => $_G['group']['grouptitle'], 'uid' => $_G['uid']);
             showmessage($message, $url_forward, $param, $extra);
     }
 } elseif ($action == 'authorize') {
