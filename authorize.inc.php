@@ -22,13 +22,23 @@ require_once libfile('function/member');
 $action = dhtmlspecialchars($_GET['action']);
 $setting = C::t('#springoauth2#spring_oauth_config')->first();
 
+function base64url_encode($plainText)
+{
+    $base64 = base64_encode($plainText);
+    $base64 = trim($base64, "=");
+    $base64url = strtr($base64, '+/', '-_');
+    return ($base64url);
+}
+
 $redirect_uri = $_G['siteurl'] . "grant-01-oidc.php";
 
 if ($action == 'callback') {
     $setting = C::t('#springoauth2#spring_oauth_config')->first();
+
     $curl = curl_init();
+
     curl_setopt_array($curl, array(
-    CURLOPT_URL => $setting['issueruri'] . '/oauth2/token',
+    CURLOPT_URL => $setting['issueruri'] .'/oauth2/exchange-token',
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_ENCODING => '',
     CURLOPT_MAXREDIRS => 10,
@@ -36,21 +46,52 @@ if ($action == 'callback') {
     CURLOPT_FOLLOWLOCATION => true,
     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
     CURLOPT_CUSTOMREQUEST => 'POST',
-    CURLOPT_POSTFIELDS => 'code='.$_GET['code'].'&grant_type=authorization_code&client_id='.$setting['clientid'].'&client_secret='.$setting['clientsecret'].'&redirect_uri=' . urlencode($redirect_uri),
+    CURLOPT_POSTFIELDS =>'{
+        "code": "'. $_GET['code'] .'",
+        "clientId": "'.$setting['clientid'].'",
+        "codeVerifier": "'. $setting['clientsecret'] .'"
+    }',
     CURLOPT_HTTPHEADER => array(
-        'Content-Type: application/x-www-form-urlencoded',
+        'Content-Type: application/json'
     ),
     ));
 
     $response = curl_exec($curl);
 
     curl_close($curl);
+
+
     $json = json_decode($response, true);
-    if (isset($json['id_token'])) {
-        $user = json_decode(base64_decode(str_replace('_', '/', str_replace('-','+',explode('.', $json['id_token'])[1]))), true);
-        $username = $user['sub'];
+
+    if (isset($json['access_token'])) {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => $setting['issueruri'] . '/oauth2/userinfo',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'GET',
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer ' . $json['access_token']
+        ),
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+        $user = json_decode($response, true);
+
+        if (!isset($user['username']) || !isset($user['fullName']) || !isset($user['id'])) {
+            return showmessage('profile_username_illegal');
+        }
+
+        $username = $user['username'];
         $fullName = $user['fullName'];
-        $userId = $user['userId'];}
+        $userId = $user['id'];}
 
         loaducenter();
         $u = uc_get_user(addslashes($username));
@@ -129,6 +170,10 @@ if ($action == 'callback') {
             showmessage($message, $url_forward, $param, $extra);
     }
 } elseif ($action == 'authorize') {
-    $url = $setting['issueruri'] . "/oauth2/authorize?response_type=code&client_id=" . $setting['clientid'] . "&scope=openid&redirect_uri=" . urlencode($redirect_uri);
+    $random = bin2hex(openssl_random_pseudo_bytes(32));
+    $verifier = $setting['clientsecret'];
+    $challenge = base64url_encode(pack('H*', hash('sha256', $verifier)));
+    $state = substr(md5(rand()), 0, 7);
+    $url = $setting['issueruri'] . "/oauth2/authorize?responseType=code&scope=user_profile&clientId=" . $setting['clientid'] . "&codeChallenge=". $challenge ."&codeChallengeMethod=S256&state=". $state;
     header('Location: ' . $url, true, 301);
 }
