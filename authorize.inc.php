@@ -39,7 +39,7 @@ if ($action == 'callback') {
     $verifier = getcookie('auth_verifier');
     
     if (!isset($verifier)) {
-        showmessage('springoauth2:invalid_verifier');
+        return showmessage('springoauth2:invalid_verifier');
     }
 
     curl_setopt_array($curl_exchange_token, array(
@@ -173,6 +173,8 @@ if ($action == 'callback') {
 
             $param = array('bbname' => $setting['bbname'], 'username' => $_G['username'], 'usergroup' => $_G['group']['grouptitle'], 'uid' => $_G['uid']);
             showmessage($message, $url_forward, $param, $extra);
+    } else {
+        return showmessage('springoauth2:malformed_oauth_userinfo');
     }
 } elseif ($action == 'authorize') {
     $verifier = bin2hex(openssl_random_pseudo_bytes(32));
