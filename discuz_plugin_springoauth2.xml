@@ -74,6 +74,7 @@
 				<item id="connect_appid_desc"><![CDATA[sample]]></item>
 				<item id="invalid_verifier"><![CDATA[Invalid verifier]]></item>
 				<item id="malformed_oauth_userinfo"><![CDATA[Malformed user info]]></item>
+				<item id="null_access_token"><![CDATA[Null access token]]></item>
 			</item>
 			<item id="templatelang">
 				<item id="connect_header_login"><![CDATA[sample]]></item>
