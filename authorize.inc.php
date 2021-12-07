@@ -173,8 +173,6 @@ if ($action == 'callback') {
 
             $param = array('bbname' => $setting['bbname'], 'username' => $_G['username'], 'usergroup' => $_G['group']['grouptitle'], 'uid' => $_G['uid']);
             showmessage($message, $url_forward, $param, $extra);
-    } else {
-        return showmessage('springoauth2:malformed_oauth_userinfo');
     }
 } elseif ($action == 'authorize') {
     $verifier = bin2hex(openssl_random_pseudo_bytes(32));
