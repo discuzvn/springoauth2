@@ -36,7 +36,7 @@ if ($action == 'callback') {
     $setting = C::t('#springoauth2#spring_oauth_config')->first();
 
     $curl = curl_init();
-    $verifier = C::app()->session->verifier;
+    $verifier = getcookie('auth_verifier');
     
     if (!isset($verifier)) {
         showmessage('springoauth2:invalid_verifier');
@@ -176,7 +176,9 @@ if ($action == 'callback') {
     }
 } elseif ($action == 'authorize') {
     $verifier = bin2hex(openssl_random_pseudo_bytes(32));
-    C::app()->session->verifier = $verifier;
+    
+    dsetcookie('auth_verifier', $verifier, 900);
+
     $challenge = base64url_encode(pack('H*', hash('sha256', $verifier)));
     $state = substr(md5(rand()), 0, 7);
     $url = $setting['issueruri'] . "/oauth2/authorize?responseType=code&scope=user_profile&clientId=" . $setting['clientid'] . "&codeChallenge=". $challenge ."&codeChallengeMethod=S256&state=". $state;
