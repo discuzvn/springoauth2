@@ -54,7 +54,7 @@ if ($action == 'callback') {
         CURLOPT_POSTFIELDS => '{
             "code": "' . $_GET['code'] . '",
             "clientId": "' . $setting['clientid'] . '",
-            "codeVerifier": "' . $setting['clientsecret'] . '"
+            "codeVerifier": "' . $verifier . '"
         }',
         CURLOPT_HTTPHEADER => array(
             'Content-Type: application/json'
