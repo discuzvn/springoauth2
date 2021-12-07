@@ -35,63 +35,63 @@ $redirect_uri = $_G['siteurl'] . "grant-01-oidc.php";
 if ($action == 'callback') {
     $setting = C::t('#springoauth2#spring_oauth_config')->first();
 
-    $curl = curl_init();
+    $curl_exchange_token = curl_init();
     $verifier = getcookie('auth_verifier');
     
     if (!isset($verifier)) {
         showmessage('springoauth2:invalid_verifier');
     }
 
-    curl_setopt_array($curl, array(
-    CURLOPT_URL => $setting['issueruri'] .'/oauth2/exchange-token',
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_ENCODING => '',
-    CURLOPT_MAXREDIRS => 10,
-    CURLOPT_TIMEOUT => 0,
-    CURLOPT_FOLLOWLOCATION => true,
-    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    CURLOPT_CUSTOMREQUEST => 'POST',
-    CURLOPT_POSTFIELDS =>'{
-        "code": "'. $_GET['code'] .'",
-        "clientId": "'.$setting['clientid'].'",
-        "codeVerifier": "'. $setting['clientsecret'] .'"
-    }',
-    CURLOPT_HTTPHEADER => array(
-        'Content-Type: application/json'
-    ),
-    ));
-
-    $response = curl_exec($curl);
-
-    curl_close($curl);
-
-
-    $json = json_decode($response, true);
-
-    if (isset($json['access_token'])) {
-        $curl = curl_init();
-
-        curl_setopt_array($curl, array(
-        CURLOPT_URL => $setting['issueruri'] . '/oauth2/userinfo',
+    curl_setopt_array($curl_exchange_token, array(
+        CURLOPT_URL => $setting['issueruri'] .'/oauth2/exchange-token',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
         CURLOPT_TIMEOUT => 0,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'GET',
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS =>'{
+            "code": "'. $_GET['code'] .'",
+            "clientId": "'.$setting['clientid'].'",
+            "codeVerifier": "'. $setting['clientsecret'] .'"
+        }',
         CURLOPT_HTTPHEADER => array(
-            'Authorization: Bearer ' . $json['access_token']
+            'Content-Type: application/json'
         ),
+    ));
+
+    $response = curl_exec($curl_exchange_token);
+
+    curl_close($curl_exchange_token);
+
+
+    $json = json_decode($response, true);
+
+    if (isset($json['access_token'])) {
+        $curl_user_info = curl_init();
+
+        curl_setopt_array($curl_user_info, array(
+            CURLOPT_URL => $setting['issueruri'] . '/oauth2/userinfo',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Bearer ' . $json['access_token']
+            ),
         ));
 
-        $response = curl_exec($curl);
+        $response = curl_exec($curl_user_info);
 
-        curl_close($curl);
+        curl_close($curl_user_info);
         $user = json_decode($response, true);
 
         if (!isset($user['username']) || !isset($user['fullName']) || !isset($user['id'])) {
-            return showmessage('profile_username_illegal');
+            return showmessage('springoauth2:malformed_oauth_userinfo');
         }
 
         $username = $user['username'];
