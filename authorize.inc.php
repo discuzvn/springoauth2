@@ -36,6 +36,11 @@ if ($action == 'callback') {
     $setting = C::t('#springoauth2#spring_oauth_config')->first();
 
     $curl = curl_init();
+    $verifier = C::app()->session->verifier;
+    
+    if (!isset($verifier)) {
+        showmessage('springoauth2:invalid_verifier');
+    }
 
     curl_setopt_array($curl, array(
     CURLOPT_URL => $setting['issueruri'] .'/oauth2/exchange-token',
@@ -170,8 +175,8 @@ if ($action == 'callback') {
             showmessage($message, $url_forward, $param, $extra);
     }
 } elseif ($action == 'authorize') {
-    $random = bin2hex(openssl_random_pseudo_bytes(32));
-    $verifier = $setting['clientsecret'];
+    $verifier = bin2hex(openssl_random_pseudo_bytes(32));
+    C::app()->session->verifier = $verifier;
     $challenge = base64url_encode(pack('H*', hash('sha256', $verifier)));
     $state = substr(md5(rand()), 0, 7);
     $url = $setting['issueruri'] . "/oauth2/authorize?responseType=code&scope=user_profile&clientId=" . $setting['clientid'] . "&codeChallenge=". $challenge ."&codeChallengeMethod=S256&state=". $state;
