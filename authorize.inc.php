@@ -38,7 +38,7 @@ if ($action == 'callback') {
     $curl_exchange_token = curl_init();
     $verifier = getcookie('auth_verifier');
 
-    if (!isset($verifier)) {
+    if (!isset($verifier) || (isset($verifier) && empty($verifier))) {
         return showmessage('springoauth2:invalid_verifier');
     }
 
